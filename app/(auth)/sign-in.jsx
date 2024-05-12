@@ -22,7 +22,7 @@ const SignIn = () => {
             const response = await axios.post("http://192.168.50.93:8000/auth/login/", {
                 username: form.username,
                 password: form.password,
-            });
+            }, {withCredentials: false});
             if (response.status !== 200) {
                 Alert.alert("Error", "Credentials are not correct");
                 return false;
@@ -32,9 +32,11 @@ const SignIn = () => {
             await SecureStore.setItemAsync("Token", ("Token " + response.data["token"]));
             return true;
         } catch (error) {
-            console.error("Error:", error.message);
-            Alert.alert("Error", error.message);
-            return false;
+            if (error.message === "Request failed with status code 400") {
+                Alert.alert("Error", "Invalid credentials");
+                return;
+            }
+            Alert.alert("Error", "Server error");
         }
     };
 
@@ -42,6 +44,7 @@ const SignIn = () => {
         setSubmitting(true);
         if (form.username === "" || form.password === "") {
             Alert.alert("Error", "Please fill out all forms");
+            setSubmitting(false);
             return;
         }
         const created = await login();

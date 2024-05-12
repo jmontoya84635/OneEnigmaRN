@@ -1,22 +1,23 @@
 {
   "expo": {
-    "name": "learn",
-    "slug": "learn",
-    "scheme": "learn",
+    "name": "One Enigma",
+    "slug": "oneenigma",
+    "scheme": "oneenigma",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/vertical-logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/vertical-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#161622"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.oneengima.chai"
     },
     "android": {
       "adaptiveIcon": {

@@ -33,13 +33,12 @@ const SignUp = () => {
                 username: form.username,
                 email: form.email,
                 password: form.password,
-            });
+            }, {withCredentials: false});
             if (response.status !== 201) {
                 Alert.alert("Error", "Could not create account");
                 return false;
             }
             console.log("response", response.data)
-            console.log("Token", response.data["token"])
             await SecureStore.setItemAsync("Token", ("Token " + response.data["token"]))
             return true;
         } catch (error) {

@@ -1,15 +1,61 @@
-import {View, Text, Alert} from "react-native";
+import {View, Text, Alert, FlatList} from "react-native";
 import React, {useEffect, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
+import {Image} from "react-native";
+import {images} from "../../constants";
+import ConversationCard from "../../components/ConversationCard";
+import EmptyState from "../../components/EmptyState";
+
 
 const Home = () => {
-
-
     const [conversations, setConversations] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    const Chats = () => {
+        return (
+            <FlatList
+                data={conversations}
+                keyExtractor={(item) => item.id}
+                renderItem={({item}) => (
+                    <>
+                        <View className="mt-4 mx-4">
+                            <ConversationCard count={item.chats_count} title={item.title}/>
+                        </View>
+                    </>
+                )}
+                ListHeaderComponent={() => (
+                    <View className="flex my-6 px-4 space-y-6">
+                        <View className="flex justify-between items-start flex-row mb-6">
+                            <View>
+                                <Text className="font-pmedium text-3xl text-gray-100">
+                                    Welcome Back
+                                </Text>
+                                <Text className="text-4xl font-psemibold text-white pt-2">
+                                    User
+                                </Text>
+                            </View>
+                            <View>
+                                <Image
+                                    source={images.logo}
+                                    className="w-20 h-20"
+                                />
+                            </View>
+                        </View>
+                    </View>
+                )}
+                ListEmptyComponent={() => (
+                    <EmptyState
+                        title="No Videos Found"
+                        subtitle="No videos created yet"
+                    />
+                )}
+            />
+        );
+    };
+
     useEffect(() => {
         const getChats = async () => {
             let token;
@@ -41,14 +87,16 @@ const Home = () => {
                 setLoading(false);
             }
         };
-        getChats()
+        getChats();
     }, []);
 
     return (
         <SafeAreaView className={"bg-primary h-full flex-1"}>
             {loading
                 ? <Text>Loading...</Text>
-                : <Text>Loaded</Text>
+                : error
+                    ? <Text>Error...</Text>
+                    : <Chats/>
             }
         </SafeAreaView>
     );
