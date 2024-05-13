@@ -8,10 +8,11 @@ const Newchat = () => {
     const [form, setForm] = React.useState({
         title: "",
         context: "",
+        prompt: "",
     });
     return (
         <SafeAreaView className={"bg-primary h-full"}>
-            <Text className="text-2xl text-white font-psemibold mx-auto mt-5">Create new Chat</Text>
+            <Text className="text-4xl text-white font-psemibold mx-auto mt-5 pt-2">Create new Chat</Text>
             <View className={"px-4"}>
                 <FormField
                     title="Chat Title"
@@ -25,9 +26,14 @@ const Newchat = () => {
                     value={form.context}
                     placeholder="Enter Chat context"
                     handleChangeText={(e) => setForm({...form, context: e})}
-                    otherStyles="mt-10 h-40"
-                    multiline={true}
-                    numberOfLines={10}
+                    otherStyles="mt-10"
+                />
+                <FormField
+                    title={"Chat prompt"}
+                    value={form.context}
+                    placeholder="Enter prompt for chat"
+                    handleChangeText={(e) => setForm({...form, prompt: e})}
+                    otherStyles="mt-10"
                 />
                 <CustomButton
                     title="Create Chat"
