@@ -20,6 +20,7 @@ const FormField = ({
                 placeholderTextColor="#7B7B8B"
                 onChangeText={handleChangeText}
                 secureTextEntry={(title === "Password" || title === "Confirm Password") && !showPassword}
+                keyboardAppearance={"dark"}
                 {...props}
             />
 

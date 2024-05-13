@@ -2,9 +2,9 @@ import {View, Text, TouchableOpacity, Image} from "react-native";
 import React from "react";
 import {icons} from "../constants";
 
-const ConversationCard = ({containerStyles, title, titleStyles, count}) => {
+const ConversationCard = ({containerStyles, title, titleStyles, count, handleClick}) => {
     return (
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleClick}>
             <View className={`max-w-sm rounded-xl overflow-hidden shadow-2xl ${containerStyles}`}>
                 <View className={`bg-black-100 p-4 flex-row justify-between ${containerStyles}`}>
                     <View>

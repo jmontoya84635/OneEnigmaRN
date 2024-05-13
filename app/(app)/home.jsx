@@ -7,13 +7,15 @@ import {Image} from "react-native";
 import {images} from "../../constants";
 import ConversationCard from "../../components/ConversationCard";
 import EmptyState from "../../components/EmptyState";
+import {usePathname, useRouter} from "expo-router";
 
 
 const Home = () => {
     const [conversations, setConversations] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
+    const router = useRouter()
+    const pathname = usePathname()
     const Chats = () => {
         return (
             <FlatList
@@ -22,7 +24,15 @@ const Home = () => {
                 renderItem={({item}) => (
                     <>
                         <View className="mt-4 mx-4">
-                            <ConversationCard count={item.chats_count} title={item.title}/>
+                            <ConversationCard count={item.chats_count} title={item.title} handleClick={()=>{
+                                const conversationId= item.id
+                                console.log("navigating to", conversationId)
+                                if (pathname.startsWith("/conversation")) {
+                                    router.setParams({id: conversationId})
+                                }else {
+                                    router.push(`/conversation/${conversationId}`)
+                                }
+                            }}/>
                         </View>
                     </>
                 )}
