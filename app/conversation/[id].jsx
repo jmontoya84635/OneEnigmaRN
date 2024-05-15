@@ -13,25 +13,47 @@ const Conversation = () => {
     const {id} = useLocalSearchParams();
     const [chats, setChats] = useState({});
     const [loading, setLoading] = useState(false);
+    const [chatLoading, setChatLoading] = useState(false);
     const [response, setResponse] = useState("");
     const ChatComponent = () => {
         return (
             <FlatList
                 data={chats}
+                keyExtractor={(item) => item.id}
                 renderItem={({item}) => {
                     return (
-                        <ChatBubble prompt={item.prompt} response={item.response}/>
+                        <>
+                            <ChatBubble message={item.prompt} role={"user"}/>
+                            <ChatBubble message={item.response} role={"bot"} />
+                        </>
                     );
                 }}
-                keyExtractor={(item) => item.id}
             />
         );
+    };
+
+    const submitResponse = async () => {
+        try {
+            setResponse("");
+            setChatLoading(true);
+            console.log(chats)
+            const token = await SecureStore.getItemAsync("Token");
+            const reply = await axios.post("http://192.168.50.93:8000/api/chat/", {
+                conversation: id,
+                prompt: response,
+            }, {headers: {"Authorization": token}});
+        } catch (e) {
+            Alert.alert("Error", e.message);
+
+        } finally {
+            setChatLoading(false);
+        }
     };
 
     useEffect(() => {
         const getChats = async () => {
             setLoading(true);
-            setChats({})
+            setChats({});
             try {
                 const token = await SecureStore.getItemAsync("Token");
                 const response = await axios.get("http://192.168.50.93:8000/api/chat/", {
@@ -55,20 +77,22 @@ const Conversation = () => {
             }
         };
         getChats();
-    }, []);
+    }, [chatLoading]);
 
     return (
         <SafeAreaView className={"bg-primary h-full"}>
             {loading
                 ? <Text className={"text-3xl"}>Loading...</Text>
-                : <View clsssName={"px-4 h-full flex-1 justify-around"}>
-                    <Text className={"text-5xl text-secondary font-psemibold text-center pt-4"}>Chat {id}</Text>
+                :
+                <View className={"flex-1"}>
+                    <Text className={"text-5xl text-secondary font-psemibold text-center pt-3 pb-3"}>Chat {id}</Text>
                     <ChatComponent/>
-                    <View className={"mt-10"}>
-                        <FormField title={"Enter your response"} placeholder={"Enter your response"} value={response}/>
-                        <CustomButton title={"Send"} containerStyles={"mt-2"}/>
+                    {chatLoading && <Text className={"text-3xl text-white text-center font-psemibold"}>Loading...</Text>}
+                    <View className={"mt-1 justify-end mx-4"}>
+                        <FormField placeholder={"Enter your response"} value={response}
+                                   handleChangeText={(e) => setResponse(e)}/>
+                        <CustomButton title={"Send"} containerStyles={"mt-2"} handlePress={submitResponse}/>
                     </View>
-
                 </View>
             }
         </SafeAreaView>

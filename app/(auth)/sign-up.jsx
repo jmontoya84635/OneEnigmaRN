@@ -71,7 +71,7 @@ const SignUp = () => {
                            otherStyles={"mt-3"} placeholder={"Type your username here"}/>
                 <FormField title={"Email"} value={form.email}
                            handleChangeText={(e) => setForm({...form, email: e})}
-                           otherStyles={"mt-3"} placeholder={"Type your username here"}/>
+                           otherStyles={"mt-3"} placeholder={"Type your username here"} keyboardType={"email"}/>
                 <FormField title={"Password"} value={form.password}
                            handleChangeText={(e) => setForm({...form, password: e})}
                            otherStyles={"mt-3"} keyboardType={"visible-password"}
