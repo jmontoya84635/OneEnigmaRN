@@ -19,19 +19,23 @@ const SignIn = () => {
 
     const login = async () => {
         try {
-            const response = await axios.post("http://192.168.50.93:8000/auth/login/", {
-                username: form.username,
-                password: form.password,
-            }, {withCredentials: false});
+            const response = await axios.post("http://192.168.50.15:8000/auth/token", {
+                username: form.username, password: form.password,
+            }, {
+                withCredentials: false, headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            });
             if (response.status !== 200) {
                 Alert.alert("Error", "Credentials are not correct");
                 return false;
             }
             console.log("response", response.data);
-            console.log("Token", response.data["token"]);
-            await SecureStore.setItemAsync("Token", ("Token " + response.data["token"]));
+            console.log("Token", response.data["access_token"]);
+            await SecureStore.setItemAsync("Token", ("Bearer " + response.data["access_token"]));
             return true;
         } catch (error) {
+            console.log(error)
             if (error.message === "Request failed with status code 400") {
                 Alert.alert("Error", "Invalid credentials");
                 return;

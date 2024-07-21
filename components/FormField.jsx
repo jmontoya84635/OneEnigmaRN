@@ -21,6 +21,7 @@ const FormField = ({
                 onChangeText={handleChangeText}
                 secureTextEntry={(title === "Password" || title === "Confirm Password") && !showPassword}
                 keyboardAppearance={"dark"}
+                on
                 {...props}
             />
 

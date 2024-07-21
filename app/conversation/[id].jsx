@@ -1,101 +1,235 @@
-import {View, Text, Alert, FlatList} from "react-native";
-import React, {useEffect, useState} from "react";
+import {
+    View,
+    Text,
+    Alert,
+    StyleSheet,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    TextInput,
+    TouchableOpacity,
+    Image,
+    ActivityIndicator,
+    Keyboard,
+} from "react-native";
+import React, {useEffect, useState, useRef} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
-import {useLocalSearchParams} from "expo-router";
-import ChatBubble from "../../components/ChatBubble";
-import FormField from "../../components/FormField";
-import CustomButton from "../../components/custombutton";
+import {router, useLocalSearchParams} from "expo-router";
+import "react-native-polyfill-globals/auto";
+import {icons} from "../../constants";
+import * as Haptics from "expo-haptics";
+import Markdown, {MarkdownIt} from "react-native-markdown-display";
+
+const markdownStyles = StyleSheet.create({
+    body: {
+        fontSize: 18, marginTop: 4,
+    }, text: {
+        color: "white", // Default text color
+    },
+});
 
 
 const Conversation = () => {
-    const {id} = useLocalSearchParams();
-    const [chats, setChats] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [chatLoading, setChatLoading] = useState(false);
-    const [response, setResponse] = useState("");
-    const ChatComponent = () => {
-        return (
-            <FlatList
-                data={chats}
-                keyExtractor={(item) => item.id}
-                renderItem={({item}) => {
-                    return (
-                        <>
-                            <ChatBubble message={item.prompt} role={"user"}/>
-                            <ChatBubble message={item.response} role={"bot"} />
-                        </>
-                    );
-                }}
-            />
-        );
+    const {id, title} = useLocalSearchParams();
+    const [loadingChats, setLoadingChats] = useState(false);
+    const [isThinking, setIsThinking] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const [currentMessage, setCurrentMessage] = useState("");
+    const [history, setHistory] = useState([]);
+
+    const scrollRef = useRef(null);
+    const scrollDown = () => {
+        scrollRef.current?.scrollToEnd({animated: false});
     };
 
-    const submitResponse = async () => {
-        try {
-            setResponse("");
-            setChatLoading(true);
-            console.log(chats)
-            const token = await SecureStore.getItemAsync("Token");
-            const reply = await axios.post("http://192.168.50.93:8000/api/chat/", {
-                conversation: id,
-                prompt: response,
-            }, {headers: {"Authorization": token}});
-        } catch (e) {
-            Alert.alert("Error", e.message);
-
-        } finally {
-            setChatLoading(false);
-        }
-    };
 
     useEffect(() => {
         const getChats = async () => {
-            setLoading(true);
-            setChats({});
+            setLoadingChats(true);
             try {
                 const token = await SecureStore.getItemAsync("Token");
-                const response = await axios.get("http://192.168.50.93:8000/api/chat/", {
+                const response = await axios.get("http://192.168.50.15:8000/chat/conversation/", {
                     headers: {
                         "Authorization": token,
-                    },
-                    params: {
-                        id: id,
+                    }, params: {
+                        conversation_id: id,
                     },
                 });
                 if (response.status === 200) {
-                    setChats(response.data);
-                    console.log("Chats", response.data);
+                    let chats = response.data;
+                    const transformedChats = chats.map(chat => ({
+                        author: chat.is_assistant ? "ChatBot" : "user", // Adjust according to your data structure
+                        message: chat.content,
+                    }));
+                    setHistory(transformedChats);
                 } else {
                     Alert.alert("Error", "Could not get chats, Server error.");
                 }
             } catch (e) {
                 Alert.alert("Error", e.message);
             } finally {
-                setLoading(false);
+                setLoadingChats(false);
             }
         };
-        getChats();
-    }, [chatLoading]);
+        getChats().then(r => setLoadingChats(false));
+    }, []);
 
-    return (
-        <SafeAreaView className={"bg-primary h-full"}>
-            {loading
-                ? <Text className={"text-3xl"}>Loading...</Text>
-                :
-                <View className={"flex-1"}>
-                    <Text className={"text-5xl text-secondary font-psemibold text-center pt-3 pb-3"}>Chat {id}</Text>
-                    <ChatComponent/>
-                    {chatLoading && <Text className={"text-3xl text-white text-center font-psemibold"}>Loading...</Text>}
-                    <View className={"mt-1 justify-end mx-4"}>
-                        <FormField placeholder={"Enter your response"} value={response}
-                                   handleChangeText={(e) => setResponse(e)}/>
-                        <CustomButton title={"Send"} containerStyles={"mt-2"} handlePress={submitResponse}/>
+    const updateHistoryWithTyping = (newMessageContent) => {
+        setHistory(currentHistory => {
+            const historyLength = currentHistory.length;
+            if (historyLength > 0 && currentHistory[historyLength - 1].author === "ChatBot") {
+                let newHistory = [...currentHistory];
+                newHistory[historyLength - 1].message = newMessageContent;
+                return newHistory;
+            } else {
+                return [...currentHistory, {author: "ChatBot", message: newMessageContent}];
+            }
+        });
+        scrollDown();
+    };
+
+    const ThinkingIndicator = () => {
+        return (<View style={{alignItems: "center", justifyContent: "center", padding: 10}}>
+                <ActivityIndicator size="large" color="white"/>
+                <Text className={"text-secondary text-xl"}>Thinking...</Text>
+            </View>);
+    };
+
+    const avatar = (role) => {
+        return <View className={"flex flex-row space-x-3 items-center"}>
+            <View className={"p-1 rounded-full w-8 h-8 border border-white bg-white"}>
+                <Text className={"text-sm font-pbold m-auto"}>{role === "ChatBot" ? "E" : "U"}</Text>
+            </View>
+            <View>
+                <Text className={"text-secondary font-pbold text-[24px]"}>{role === "ChatBot" ? "Enigma" : "You"}</Text>
+            </View>
+        </View>;
+    };
+
+    const sendMessage = async () => {
+        if (!currentMessage.length) {
+            Alert.alert("Alert!", "Your message is empty!");
+            return;
+        }
+        Keyboard.dismiss();
+        scrollDown();
+        setHistory([...history, {author: "user", message: currentMessage}]);
+        let tmpMessage = currentMessage;
+        setCurrentMessage("");
+        setIsThinking(true);
+        try {
+            const token = await SecureStore.getItemAsync("Token");
+            const payload = {
+                conversation_id: id, content: tmpMessage,
+            };
+            await fetch("http://192.168.50.15:8000/chat", {
+                method: "POST", headers: {
+                    Authorization: token, "Content-Type": "application/json",
+                }, body: JSON.stringify(payload), reactNative: {textStreaming: true},
+            })
+                .then(response => response.body)
+                .then(async (stream) => {
+                    if (!isTyping) {
+                        setIsTyping(true);
+                        setIsThinking(false);
+                    }
+                    let combined = "";
+                    const reader = stream.getReader();
+                    const decoder = new TextDecoder();
+                    const processStream = async () => {
+                        const processChunk = async () => {
+                            const {done, value} = await reader.read();
+                            if (done) {
+                                setIsThinking(false);
+                                setIsTyping(false);
+                                scrollDown();
+                                return;
+                            }
+                            try {
+                                const text = decoder.decode(value); // Convert the binary data to text
+                                combined = combined + text;
+                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                await updateHistoryWithTyping(combined);
+                            } catch (e) {
+                                console.error(e);
+                            }
+                            setTimeout(processChunk); // Delay before processing the next chunk
+                        };
+                        processChunk();
+                    };
+                    processStream();
+                });
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const promptDeleteConversation = async () => {
+        Alert.alert("Delete?", "Are you sure you want to delete this conversation?", [{
+            text: "Cancel", onPress: () => console.log("Cancelled"), style: "cancel",
+        }, {
+            text: "DELETE", onPress: deleteConversation, style: "destructive",
+        }]);
+    };
+
+    const deleteConversation = async () => {
+        const token = await SecureStore.getItemAsync("Token");
+        const response = await axios.delete("http://192.168.50.15:8000/chat/conversation/", {
+            headers: {
+                "Authorization": token,
+            }, params: {
+                conversation_id: id,
+            },
+        });
+        if (response.status === 200) {
+            router.replace("/home");
+        } else {
+            Alert.alert("Error", `Could not delete conversation: status: ${response.status}`);
+        }
+    };
+
+    return (<SafeAreaView className="px-1 bg-primary h-full">
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+                <View className="px-4 py-2 border-b border-gray-700 flex flex-row justify-between items-center">
+                    <Text className="text-xl font-pbold text-white">{title}</Text>
+                    <TouchableOpacity onPress={promptDeleteConversation}>
+                        <Text className="text-red-500">Delete</Text>
+                    </TouchableOpacity>
+                </View>
+                <ScrollView className="px-4 mt-2 mb-2 h-[90%]" ref={scrollRef} showsVerticalScrollIndicator={false}>
+                    {history.map((msg, i) => {
+                        return <View key={i} className={"my-2"}>
+                            <View>
+                                {avatar(msg.author)}
+                                <Markdown style={markdownStyles}
+                                          markdownit={MarkdownIt({typographer: true}).disable(["link", "image"])}>
+                                    {msg.message}
+                                </Markdown>
+                            </View>
+                        </View>;
+                    })}
+                    {isThinking && <ThinkingIndicator/>}
+                </ScrollView>
+                <View className="flex flex-row justify-between items-center">
+                    <View className="w-[90%]">
+                        <TextInput className="rounded-md p-4 bg-gray-500"
+                                   placeholder="Ask something.. " keyboardAppearance={"dark"}
+                                   value={currentMessage} onChangeText={(text) => setCurrentMessage(text)}/>
+                    </View>
+                    <View>
+                        <TouchableOpacity onPress={sendMessage} disabled={isThinking || isTyping}>
+                            <Image
+                                source={icons.play}
+                                resizeMode="contain"
+                                className={"w-8 h-8"}
+                                aria-disabled={isThinking || isTyping}
+                            />
+                        </TouchableOpacity>
                     </View>
                 </View>
-            }
-        </SafeAreaView>
-    );
+            </KeyboardAvoidingView>
+        </SafeAreaView>);
 };
 export default Conversation;

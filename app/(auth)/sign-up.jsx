@@ -29,7 +29,7 @@ const SignUp = () => {
 
     const createUser = async () => {
         try {
-            const response = await axios.post("http://192.168.50.93:8000/auth/signup/", {
+            const response = await axios.post("http://192.168.50.148:8000/auth/signup/", {
                 username: form.username,
                 email: form.email,
                 password: form.password,

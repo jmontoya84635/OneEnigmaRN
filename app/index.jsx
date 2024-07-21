@@ -7,6 +7,8 @@ import {Redirect, useRouter} from "expo-router";
 import {StatusBar} from "expo-status-bar";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
+import 'react-native-polyfill-globals/auto'
+
 
 
 const Index = () => {
@@ -22,8 +24,9 @@ const Index = () => {
                     setTokenValid(false);
                     return;
                 }
-                const response = await axios.get("http://192.168.50.93:8000/api/verify/", {
+                const response = await axios.get("http://192.168.50.15:8000/auth/verify", {
                     headers: {
+                        "Content-Type": "application/json",
                         "Authorization": token,
                     },
                 });
@@ -37,6 +40,7 @@ const Index = () => {
                     setTokenValid(false);
                     return;
                 }
+                console.log(error)
                 Alert.alert("Error", "Could not connect to server");
             }
         };

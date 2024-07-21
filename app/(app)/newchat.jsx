@@ -1,15 +1,45 @@
-import {View, Text} from "react-native";
+import {View, Text, Alert} from "react-native";
 import React from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import FormField from "../../components/FormField";
 import CustomButton from "../../components/custombutton";
+import * as SecureStore from "expo-secure-store";
+import axios from "axios";
+import {router, useRouter} from "expo-router";
 
 const Newchat = () => {
+    const router = useRouter();
     const [form, setForm] = React.useState({
         title: "",
         context: "",
         prompt: "",
     });
+    const createChat = async () => {
+        try {
+            const token = await SecureStore.getItemAsync("Token");
+            const response = await axios.post(
+                "http://192.168.50.15:8000/chat/conversation/", {
+                    title: form.title,
+                    prompt: form.context,
+                }, {
+                    headers: {
+                        "Authorization": token,
+                    },})
+            if (response.status !== 201) {
+                console.error("Error", "Could not create chat");
+                return false;
+            } else {
+                setForm({
+                    title: "",
+                    context: "",
+                    prompt: "",
+                })
+                router.replace("/home");
+            }
+        } catch (e) {
+            Alert.alert("Error", e.message);
+        }
+    }
     return (
         <SafeAreaView className={"bg-primary h-full"}>
             <Text className="text-4xl text-white font-psemibold mx-auto mt-5 pt-2">Create new Chat</Text>
@@ -28,16 +58,10 @@ const Newchat = () => {
                     handleChangeText={(e) => setForm({...form, context: e})}
                     otherStyles="mt-10"
                 />
-                <FormField
-                    title={"Chat prompt"}
-                    value={form.context}
-                    placeholder="Enter prompt for chat"
-                    handleChangeText={(e) => setForm({...form, prompt: e})}
-                    otherStyles="mt-10"
-                />
                 <CustomButton
                     title="Create Chat"
                     containerStyles="mt-20"
+                    handlePress={createChat}
                 />
             </View>
         </SafeAreaView>
