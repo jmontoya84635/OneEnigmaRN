@@ -32,6 +32,7 @@ const markdownStyles = StyleSheet.create({
 
 
 const Conversation = () => {
+    const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
     const {id, title} = useLocalSearchParams();
     const [loadingChats, setLoadingChats] = useState(false);
     const [isThinking, setIsThinking] = useState(false);
@@ -50,7 +51,7 @@ const Conversation = () => {
             setLoadingChats(true);
             try {
                 const token = await SecureStore.getItemAsync("Token");
-                const response = await axios.get("http://192.168.50.15:8000/chat/conversation/", {
+                const response = await axios.get(`${API_HOST}/chat/conversation/`, {
                     headers: {
                         "Authorization": token,
                     }, params: {
@@ -93,7 +94,7 @@ const Conversation = () => {
     const ThinkingIndicator = () => {
         return (<View style={{alignItems: "center", justifyContent: "center", padding: 10}}>
                 <ActivityIndicator size="large" color="white"/>
-                <Text className={"text-secondary text-xl"}>Thinking...</Text>
+                <Text className={"font-pbold text-secondary text-xl"}>Thinking...</Text>
             </View>);
     };
 
@@ -124,7 +125,7 @@ const Conversation = () => {
             const payload = {
                 conversation_id: id, content: tmpMessage,
             };
-            await fetch("http://192.168.50.15:8000/chat", {
+            await fetch(`${API_HOST}/chat`, {
                 method: "POST", headers: {
                     Authorization: token, "Content-Type": "application/json",
                 }, body: JSON.stringify(payload), reactNative: {textStreaming: true},
@@ -161,8 +162,12 @@ const Conversation = () => {
                     };
                     processStream();
                 });
+
         } catch (e) {
-            console.error(e);
+            Alert.alert("Error", e.message);
+        } finally {
+            setIsThinking(false);
+            setIsTyping(false);
         }
     };
 
@@ -176,7 +181,7 @@ const Conversation = () => {
 
     const deleteConversation = async () => {
         const token = await SecureStore.getItemAsync("Token");
-        const response = await axios.delete("http://192.168.50.15:8000/chat/conversation/", {
+        const response = await axios.delete(`${API_HOST}/chat/conversation/`, {
             headers: {
                 "Authorization": token,
             }, params: {

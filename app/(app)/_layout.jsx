@@ -37,7 +37,7 @@ const obj = (title, icon) => {
         ),
     });
 };
-
+// TODO: fix gap on nav bar
 const App_Layout = () => {
     return (
         <>
@@ -48,9 +48,10 @@ const App_Layout = () => {
                     tabBarShowLabel: false,
                     tabBarStyle: {
                         backgroundColor: "#161622",
-                        borderTopWidth: 1,
+                        borderTopWidth: 0,
                         borderTopColor: "#232533",
-                        height: 84,
+                        height: 50,
+                        paddingTop: 0,
                     },
                 }}
             >

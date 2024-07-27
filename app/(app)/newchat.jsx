@@ -8,40 +8,35 @@ import axios from "axios";
 import {router, useRouter} from "expo-router";
 
 const Newchat = () => {
+    const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
     const router = useRouter();
     const [form, setForm] = React.useState({
-        title: "",
-        context: "",
-        prompt: "",
+        title: "", context: "", prompt: "",
     });
     const createChat = async () => {
         try {
             const token = await SecureStore.getItemAsync("Token");
-            const response = await axios.post(
-                "http://192.168.50.15:8000/chat/conversation/", {
-                    title: form.title,
-                    prompt: form.context,
-                }, {
-                    headers: {
-                        "Authorization": token,
-                    },})
+            const response = await axios.post(`${API_HOST}/chat/conversation/`, {
+                title: form.title, prompt: form.context,
+            }, {
+                headers: {
+                    "Authorization": token,
+                },
+            });
             if (response.status !== 201) {
                 console.error("Error", "Could not create chat");
                 return false;
             } else {
                 setForm({
-                    title: "",
-                    context: "",
-                    prompt: "",
-                })
+                    title: "", context: "", prompt: "",
+                });
                 router.replace("/home");
             }
         } catch (e) {
             Alert.alert("Error", e.message);
         }
-    }
-    return (
-        <SafeAreaView className={"bg-primary h-full"}>
+    };
+    return (<SafeAreaView className={"bg-primary h-full"}>
             <Text className="text-4xl text-white font-psemibold mx-auto mt-5 pt-2">Create new Chat</Text>
             <View className={"px-4"}>
                 <FormField
@@ -64,7 +59,6 @@ const Newchat = () => {
                     handlePress={createChat}
                 />
             </View>
-        </SafeAreaView>
-    );
+        </SafeAreaView>);
 };
 export default Newchat;

@@ -8,9 +8,12 @@ import FormField from "../../components/FormField";
 import CustomButton from "../../components/custombutton";
 import {Link, router} from "expo-router";
 import axios from "axios";
-import * as SecureStore from 'expo-secure-store'
+import * as SecureStore from "expo-secure-store";
+import Logo from "../../components/logo.jsx";
+
 
 const SignUp = () => {
+    const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({
         username: "", password: "", password2: "", email: "",
@@ -23,28 +26,83 @@ const SignUp = () => {
         } else if (form.password !== form.password2) {
             Alert.alert("Error", "Passwords must match");
             return false;
+        } else if (form.password.length < 8) {
+            Alert.alert("Error", "Password must be at least 8 characters long");
+            return false;
+        } else if (!form.email.includes("@")) {
+            Alert.alert("Error", "Email must be valid");
+            return false;
+        } else if (form.username.length < 4) {
+            Alert.alert("Error", "Username must be at least 4 characters long");
+            return false;
+        } else if (form.username.length > 20) {
+            Alert.alert("Error", "Username must be at most 20 characters long");
+            return false;
+        } else if (form.password.length > 20) {
+            Alert.alert("Error", "Password must be at most 20 characters long");
+            return false;
+        } else if (form.email.length > 50) {
+            Alert.alert("Error", "Email must be at most 50 characters long");
+            return false;
+        } else if (form.email.length < 5) {
+            Alert.alert("Error", "Email must be at least 5 characters long");
+            return false;
+        } else if (form.username.includes(" ")) {
+            Alert.alert("Error", "Username must not contain spaces");
+            return false;
+        } else if (form.password.includes(" ")) {
+            Alert.alert("Error", "Password must not contain spaces");
+            return false;
+        } else if (form.email.includes(" ")) {
+            Alert.alert("Error", "Email must not contain spaces");
+            return false;
         }
         return true;
     };
 
     const createUser = async () => {
         try {
-            const response = await axios.post("http://192.168.50.148:8000/auth/signup/", {
-                username: form.username,
-                email: form.email,
-                password: form.password,
+            const response = await axios.post(`${API_HOST}/auth/`, {
+                username: form.username, email: form.email, password: form.password,
             }, {withCredentials: false});
-            if (response.status !== 201) {
-                Alert.alert("Error", "Could not create account");
-                return false;
+            if (response.status === 201) {
+                try {
+                    const loginResponse = await axios.post(`${API_HOST}/auth/token`, {
+                        username: form.username, password: form.password,
+                    }, {
+                        withCredentials: false, headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                    });
+                    await SecureStore.setItemAsync("Token", ("Bearer " + loginResponse.data["access_token"]));
+                    await SecureStore.setItemAsync("Username", (response.data["username"]));
+                    return true;
+                } catch (error) {
+                    if (error.response) {
+                        if (error.response.status === 401) {
+                            Alert.alert("Error", "Credentials are not correct");
+                        } else {
+                            Alert.alert("Error", error.response.data.detail);
+                        }
+                    } else {
+                        Alert.alert("Error", `Could not connect to server ${error}`);
+                    }
+                    return false;
+                }
             }
-            console.log("response", response.data)
-            await SecureStore.setItemAsync("Token", ("Token " + response.data["token"]))
-            return true;
         } catch (error) {
-            console.error("Error:", error.message);
-            Alert.alert("Error", "Could not create account");
+            if (error.response) {
+                if (error.response.status === 401) {
+                    Alert.alert("Error", "Credentials are not correct");
+                } else {
+                    Alert.alert("Error", error.response.data.detail);
+                }
+            } else {
+                Alert.alert("Error", "Could not connect to server" + error);
+            }
             return false;
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -52,23 +110,24 @@ const SignUp = () => {
     const submit = async () => {
         setSubmitting(true);
         if (!checkForm()) {
+            setSubmitting(false);
             return;
         }
         const created = await createUser();
         if (created && await SecureStore.getItemAsync("Token")) {
-            router.replace("/")
+            console.log(`Token: ${await SecureStore.getItemAsync("Token")}`);
+            router.replace("/");
         }
-        setSubmitting(false);
     };
 
     return (<SafeAreaView className={"bg-primary h-full"}>
         <ScrollView>
             <View className="w-full flex justify-center h-full px-4">
-                <Image source={images.horizontal} resizeMode={"cover"} className={"w-full h-[100px]"}/>
+                <Logo/>
                 <Text className={"text-2xl font-semibold text-white mt-5"}>Sign Up</Text>
                 <FormField title={"Username"} value={form.username}
                            handleChangeText={(e) => setForm({...form, username: e})}
-                           otherStyles={"mt-3"} placeholder={"Type your username here"}/>
+                           otherStyles={"mt-3"} placeholder={"Type your username here"} keyboardType={"username"}/>
                 <FormField title={"Email"} value={form.email}
                            handleChangeText={(e) => setForm({...form, email: e})}
                            otherStyles={"mt-3"} placeholder={"Type your username here"} keyboardType={"email"}/>
@@ -94,7 +153,7 @@ const SignUp = () => {
                 </Link>
             </View>
         </ScrollView>
-        <StatusBar style={"light"}/>
+        <StatusBar backgroundColor={"transparent"} style={"light"}/>
     </SafeAreaView>);
 };
 export default SignUp;

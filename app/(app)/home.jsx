@@ -1,5 +1,5 @@
 import {View, Text, Alert, FlatList} from "react-native";
-import React, {useEffect, useState, useCallback} from "react";
+import React, {useEffect, useState, useCallback, useRef} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
@@ -8,17 +8,25 @@ import {images} from "../../constants";
 import ConversationCard from "../../components/ConversationCard";
 import EmptyState from "../../components/EmptyState";
 import {useFocusEffect, usePathname, useRouter} from "expo-router";
-import id from "../conversation/[id]";
+import LottieView from "lottie-react-native";
 
 
 const Home = () => {
+    const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
     const [conversations, setConversations] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const router = useRouter();
-    const pathname = usePathname();
+    const [username, setUsername] = useState("");
+    useEffect(() => {
+        SecureStore.getItemAsync("Username").then((value) => {
+            setUsername(value);
+        });
+    }, []);
     const Chats = () => {
+        const animation = useRef(null);
         return (<FlatList
+                showsVerticalScrollIndicator={false}
                 data={conversations}
                 keyExtractor={(item) => item.id}
                 renderItem={({item}) => (<>
@@ -35,13 +43,17 @@ const Home = () => {
                                     Welcome Back
                                 </Text>
                                 <Text className="text-4xl font-psemibold text-white pt-2">
-                                    User
+                                    {username}
                                 </Text>
                             </View>
                             <View>
-                                <Image
-                                    source={images.logo}
-                                    className="w-20 h-20"
+                                <LottieView
+                                    autoPlay
+                                    ref={animation}
+                                    style={{
+                                        width: 85, height: 85,
+                                    }}
+                                    source={require("../../assets/Chatbot.json")}
                                 />
                             </View>
                         </View>
@@ -62,13 +74,14 @@ const Home = () => {
         }
         setLoading(true);
         try {
-            const response = await axios.get("http://192.168.50.15:8000/chat/conversation/", {
+            const response = await axios.get(`${API_HOST}/chat/conversation/`, {
                 headers: {
                     "content-type": "application/json", "Authorization": token,
                 },
             });
             if (response.status === 200) {
-                setConversations(response.data);
+                const reversedConversations = [...response.data].reverse();
+                setConversations(reversedConversations);
             } else {
                 Alert.alert("Error", "Could not get chats, Server error.");
                 setError(true);

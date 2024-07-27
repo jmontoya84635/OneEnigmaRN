@@ -9,9 +9,10 @@ import {Link, router} from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import {StatusBar} from "expo-status-bar";
+import Logo from "../../components/logo.jsx";
 
 const SignIn = () => {
-
+    const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({
         username: "", password: "",
@@ -19,28 +20,29 @@ const SignIn = () => {
 
     const login = async () => {
         try {
-            const response = await axios.post("http://192.168.50.15:8000/auth/token", {
+            const response = await axios.post(`${API_HOST}/auth/token`, {
                 username: form.username, password: form.password,
             }, {
                 withCredentials: false, headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                 },
             });
-            if (response.status !== 200) {
-                Alert.alert("Error", "Credentials are not correct");
-                return false;
-            }
-            console.log("response", response.data);
-            console.log("Token", response.data["access_token"]);
             await SecureStore.setItemAsync("Token", ("Bearer " + response.data["access_token"]));
+            await SecureStore.setItemAsync("Username", (response.data["username"]));
             return true;
         } catch (error) {
-            console.log(error)
-            if (error.message === "Request failed with status code 400") {
-                Alert.alert("Error", "Invalid credentials");
-                return;
+            if (error.response) {
+                if (error.response.status === 401) {
+                    Alert.alert("Error", "Credentials are not correct");
+                    setForm({username: form.username, password: ""});
+                }
+                Alert.alert("Error", error.response.data.detail);
+            } else {
+                Alert.alert("Error", "Could not connect to server " + error);
             }
-            Alert.alert("Error", "Server error");
+            return false;
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -55,17 +57,16 @@ const SignIn = () => {
         if (created && await SecureStore.getItemAsync("Token")) {
             router.replace("/");
         }
-        setSubmitting(false);
     };
 
     return (<SafeAreaView className={"bg-primary h-full"}>
         <ScrollView style={{display: "flex"}}>
             <View className="w-full flex justify-center h-full px-4 my-6">
-                <Image source={images.horizontal} resizeMode={"cover"} className={"w-full h-[100px]"}/>
+                <Logo/>
                 <Text className={"text-2xl text-white mt-10 font-psemibold"}>Sign in</Text>
                 <FormField title={"Username"} value={form.username}
                            handleChangeText={(e) => setForm({...form, username: e})}
-                           otherStyles={"mt-7"} placeholder={"Type your username here"}/>
+                           otherStyles={"mt-7"} placeholder={"Type your username here"} keyboardType={"username"}/>
                 <FormField title={"Password"} value={form.password}
                            handleChangeText={(e) => setForm({...form, password: e})}
                            otherStyles={"mt-7"} keyboardType={"visible-password"}
@@ -83,7 +84,7 @@ const SignIn = () => {
                 </Link>
             </View>
         </ScrollView>
-        <StatusBar style={"light"}/>
+        <StatusBar backgroundColor={"transparent"} style={"light"}/>
     </SafeAreaView>);
 };
 export default SignIn;
