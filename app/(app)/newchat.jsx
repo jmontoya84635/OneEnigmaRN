@@ -14,6 +14,10 @@ const Newchat = () => {
         title: "", context: "", prompt: "",
     });
     const createChat = async () => {
+        if (form.title === "") {
+            Alert.alert("Error", "Please enter a title");
+            return false;
+        }
         try {
             const token = await SecureStore.getItemAsync("Token");
             const response = await axios.post(`${API_HOST}/chat/conversation/`, {
