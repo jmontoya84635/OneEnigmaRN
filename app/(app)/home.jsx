@@ -3,13 +3,10 @@ import React, {useEffect, useState, useCallback, useRef} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
-import {Image} from "react-native";
-import {images} from "../../constants";
 import ConversationCard from "../../components/ConversationCard";
 import EmptyState from "../../components/EmptyState";
 import {useFocusEffect, usePathname, useRouter} from "expo-router";
 import LottieView from "lottie-react-native";
-
 
 const Home = () => {
     const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
@@ -98,7 +95,7 @@ const Home = () => {
         getChats();
     }, []));
     return (<SafeAreaView className={"bg-primary h-full flex-1"}>
-            {loading ? <Text>Loading...</Text> : error ? <Text>Error...</Text> : <Chats/>}
+            {loading ? <Text className={"font-pextrabold text-secondary text-5xl"}>Loading...</Text> : error ? <Text>Error...</Text> : <Chats/>}
         </SafeAreaView>);
 };
 export default Home;

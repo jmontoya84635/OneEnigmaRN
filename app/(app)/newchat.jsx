@@ -53,7 +53,7 @@ const Newchat = () => {
                 <FormField
                     title={"Chat context"}
                     value={form.context}
-                    placeholder="Enter Chat context"
+                    placeholder="Enter Chat context (optional)"
                     handleChangeText={(e) => setForm({...form, context: e})}
                     otherStyles="mt-10"
                 />

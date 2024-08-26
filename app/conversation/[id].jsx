@@ -20,14 +20,33 @@ import {router, useLocalSearchParams} from "expo-router";
 import "react-native-polyfill-globals/auto";
 import {icons} from "../../constants";
 import * as Haptics from "expo-haptics";
-import Markdown, {MarkdownIt} from "react-native-markdown-display";
+// import Markdown, {MarkdownIt} from "react-native-markdown-display";
+import Markdown from '@ronradtke/react-native-markdown-display';
 
 const markdownStyles = StyleSheet.create({
     body: {
         fontSize: 18, marginTop: 4,
-    }, text: {
-        color: "white", // Default text color
     },
+    text: {
+        color: "white",
+    },
+    bullet_list: {
+        color: "white",
+    },
+    ordered_list: {
+        color: "white",
+    },
+    blockquote: {
+        backgroundColor: "black",
+    },
+    code_block: {
+        color: "white",
+        backgroundColor: "black",
+    },
+    heading1: {
+        color: "black",
+        backgroundColor: "black",
+    }
 });
 
 
@@ -197,10 +216,10 @@ const Conversation = () => {
 
     return (<SafeAreaView className="px-1 bg-primary h-full">
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-                <View className="px-4 py-2 border-b border-gray-700 flex flex-row justify-between items-center">
-                    <Text className="text-xl font-pbold text-white">{title}</Text>
-                    <TouchableOpacity onPress={promptDeleteConversation}>
-                        <Text className="text-red-500">Delete</Text>
+                <View className="px-4 py-2 rounded-2xl border-2 border-gray-700 flex flex-row justify-between items-center">
+                    <Text className="text-xl font-pbold text-white flex-wrap w-[75%]">{title}</Text>
+                    <TouchableOpacity onPress={promptDeleteConversation} className={"rounded-2xl border-red-700 border-2 p-3"}>
+                        <Text className="text-red-700 font-pmedium pe-1">Delete</Text>
                     </TouchableOpacity>
                 </View>
                 <ScrollView className="px-4 mt-2 mb-2 h-[90%]" ref={scrollRef} showsVerticalScrollIndicator={false}>
@@ -208,8 +227,7 @@ const Conversation = () => {
                         return <View key={i} className={"my-2"}>
                             <View>
                                 {avatar(msg.author)}
-                                <Markdown style={markdownStyles}
-                                          markdownit={MarkdownIt({typographer: true}).disable(["link", "image"])}>
+                                <Markdown style={markdownStyles}>
                                     {msg.message}
                                 </Markdown>
                             </View>
